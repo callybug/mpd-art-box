@@ -13,7 +13,7 @@ gi.require_version('Gtk', '3.0')
 
 from gi.repository import Gio, GLib, Gtk, Gdk, GdkPixbuf  # noqa: E402
 
-version = '0.0.9'
+version = '0.0.9rnh (really naff hack)'
 
 
 @contextlib.contextmanager
@@ -56,7 +56,7 @@ def app_main(mpd_host, mpd_port, background_color):
     def set_image():
         nonlocal pixbuf
         nonlocal win_size
-
+        image.clear()
         if pixbuf:
             win_size = win.get_size()
             win_width, win_height = win_size
@@ -90,18 +90,22 @@ def app_main(mpd_host, mpd_port, background_color):
             while True:
                 current = client.currentsong()
                 if not current:
-                    pixbuf = None
+                        pixbuf = None
                 else:
                     try:
-                        image_bytes = client.albumart(
-                            current['file'])['binary']
-                    except mpd.CommandError:
-                        pixbuf = None
-                    else:
-                        pixbuf = GdkPixbuf.Pixbuf.new_from_stream(
-                            Gio.MemoryInputStream.new_from_bytes(
-                                GLib.Bytes.new(image_bytes)
-                            ), None)
+                        try:
+                            image_bytes = client.readpicture(
+                                current['file'])['binary']
+                        except:
+                            image_bytes = client.albumart(
+                                current['file'])['binary']
+                        finally:
+                            pixbuf = GdkPixbuf.Pixbuf.new_from_stream(
+                                Gio.MemoryInputStream.new_from_bytes(
+                                    GLib.Bytes.new(image_bytes)
+                                ), None)
+                    except:
+                        pixbuf=None
                 GLib.idle_add(set_image)
                 client.idle()
 
